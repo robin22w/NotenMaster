@@ -34,7 +34,7 @@ class PDF_SEPARATOR():
         self.debugmode = debugmode
 
         # Load yml-file
-        with open(os.path.join(os.getcwd(), "parameter.yml"), encoding='utf8') as f:
+        with open(os.path.join(os.getcwd(), "instruments.yml"), encoding='utf8') as f:
             self.config = yaml.safe_load(f)
             print(json.dumps(self.config, indent=2, ensure_ascii=False))
 
@@ -350,7 +350,7 @@ class PDF_SEPARATOR():
 def main():
 
     #pdf_path = os.path.join(os.getcwd(), "Augenblicke - FH1.pdf")
-    pdf_path = os.path.join(os.getcwd(), "Augenblicke.pdf")
+    pdf_path = os.path.join(os.getcwd(), "testdata", "Augenblicke.pdf")
 
     PDF_OBJ = PDF_SEPARATOR(pdf_path=pdf_path,
                             debugmode=False)
