@@ -6,7 +6,7 @@ Flute:
   filter: [Flöte,Flute]
 Oboe:
   filename: Oboe
-  filter: [Oboe]
+  filter: [Oboe,Hobo]
 Fagott:
   filename: Fagott
   filter: [Fagott, Bassoon]
@@ -30,7 +30,7 @@ Trompete:
   filter: [Trompete,Trumpet]
 Fluegelhorn:
   filename: Fluegelhorn
-  filter: [Flügelhorn, Flügel Horn]
+  filter: [Flügelhorn,Flügel Horn,Piston]
 Horn:
   filename: Horn
   filter: [Horn]
@@ -60,4 +60,4 @@ Gesang:
   filter: [Text, Gesang]
 Schlagzeug:
   filename: Schlagzeug
-  filter: [Schlagzeug,Percussion,Drum Set]
+  filter: [Schlagzeug,Percussion,Drum Set,Pauke,Timpani,Mallets,Lyra]

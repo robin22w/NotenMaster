@@ -1,24 +1,25 @@
-import PyPDF2
-from pypdf import PdfReader
-import aspose.ocr as ocr
-import os
-import cv2
-from PIL import Image
-import matplotlib.pyplot as plt
-
-from pdf2image import convert_from_path, convert_from_bytes
-import pytesseract
-import pandas as pd
-import numpy as np
-import argparse as args
-import yaml
 import json
+import os
+os.environ["TESSDATA_PREFIX"] = 'C:/Program Files/Tesseract-OCR/tessdata'
+import time
+
+import cv2
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import PyPDF2
+import pytesseract
+import yaml
+from pdf2image import convert_from_path
+from pypdf import PdfReader
 from tqdm import tqdm
+import tesserocr
+from tesserocr import PyTessBaseAPI
+from PIL import Image
+import threading
+import multiprocessing
 
 from utils import create_lookup_table
-
-pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
-
 
 # https://towardsdatascience.com/extracting-text-from-scanned-pdf-using-pytesseract-open-cv-cd670ee38052
 
@@ -63,13 +64,17 @@ class PDF_SEPARATOR():
                                     dpi=200,
                                     first_page=self.p,
                                     last_page=self.p)
-            
+
+
             # 1. Get Regions of Interest
             thresh, line_items_coordinates = self.mark_regions_of_interest(img[0])
 
             # 2. Performing OCR (Optical character recognition) incl. preprocessing
+            start_2 = time.time()
             text_df = self.process_image_to_text(thresh, line_items_coordinates)
-            
+            end_2 = time.time()
+            print("TIME: OCR: {}".format(end_2 - start_2))
+
             # 3. Classify translated text
             instrument = self.classify_instrument(text_df)
 
@@ -78,8 +83,6 @@ class PDF_SEPARATOR():
 
         print(self.pdf_page_instrument_table)
                 
-
-
             
     def mark_regions_of_interest(self, img):
         """
@@ -134,20 +137,97 @@ class PDF_SEPARATOR():
         # Create pandas dataframe
         df = pd.DataFrame(columns=['text'])
 
+        # ########### Threading ##############
+        # # Maximum number of threads
+        # max_threads = 8  # Adjust this based on your requirements
+
+        # # Semaphore to limit the number of concurrent threads
+        # thread_semaphore = threading.Semaphore(max_threads)
+
+        # def perform_ocr_threaded(img, id):
+        #     df.loc[id] = tesserocr.image_to_text(Image.fromarray(img), lang="deu")
+
+        # def worker(img, id):
+        #     with thread_semaphore:
+        #         perform_ocr_threaded(img, id)
+        
+        # # Create threads for each image
+        # threads = []
+        # for id, c in zip(range(len(line_items_coordinates)), line_items_coordinates):
+        #     img = image[c[0][1]:c[1][1], c[0][0]:c[1][0]]
+        #     thread = threading.Thread(target=worker, args=(img,id,))
+        #     threads.append(thread)
+        #     thread.start()
+
+        # # Warten Sie darauf, dass alle Threads beendet sind
+        # for thread in threads:
+        #     thread.join()
+
+        # print("All threads have finished processing.")
+
+        # ############ Multiprocessing ##############
+
+        # # Maximum number of processes
+        # max_processes = 4  # Adjust this based on your requirements
+
+        # # Semaphore to control concurrent access
+        # semaphore = multiprocessing.Semaphore(max_processes)
+
+        # # def perform_ocr_threaded(img, id):
+        # #     df.loc[id] = tesserocr.image_to_text(Image.fromarray(img), lang="deu")
+
+        # # def worker(img, id, semaphore):
+        # #     with semaphore:
+        # #         perform_ocr_threaded(img, id)
+
+        # # Create a list to store process objects
+        # processes = []
+
+        # for id, c in zip(range(len(line_items_coordinates)), line_items_coordinates):
+        #     # Create a new process for each image
+        #     img = image[c[0][1]:c[1][1], c[0][0]:c[1][0]]
+        #     process = multiprocessing.Process(target=worker, args=(img,id,semaphore,))
+        #     processes.append(process)
+        #     process.start()
+
+        # # Wait for all processes to finish
+        # for process in processes:
+        #     process.join()
+
+        # print("All processes have finished processing.")
+
+
         for i in range(len(line_items_coordinates)):
 
             # get co-ordinates to crop the image
             c = line_items_coordinates[i]
 
             # cropping image img = image[y0:y1, x0:x1]
-            img = image[c[0][1]:c[1][1], c[0][0]:c[1][0]]    
+            img = image[c[0][1]:c[1][1], c[0][0]:c[1][0]]   
 
             # if self.debugmode:
             #     plt.figure(figsize=(10,10))
             #     plt.imshow(img, cmap=plt.cm.gray)
 
             # pytesseract image to string to get results
-            df.loc[i] = str(pytesseract.image_to_string(img, lang="deu")) # use german language (ä,ü,ö,ß,...)
+            # TODO: Speedup: https://pypi.org/project/tesserocr/
+            # https://stackoverflow.com/questions/66334737/pytesseract-is-very-slow-for-real-time-ocr-any-way-to-optimise-my-code
+            # print(tesserocr.tesseract_version())  # print tesseract-ocr version
+            # print(tesserocr.get_languages())
+            #PyTessBaseAPI(path='C:/Program Files/Tesseract-OCR/tessdata')
+            #start_10 = time.time()
+            df.loc[i] = tesserocr.image_to_text(Image.fromarray(img), lang="deu")
+            #end_10 = time.time()
+            #print("TIME: OCR_tesseract_better?: {}".format(end_10 - start_10))
+
+
+            # start_1 = time.time()
+            # df.loc[i] = str(pytesseract.image_to_string(img, lang="deu")) # use german language (ä,ü,ö,ß,...)
+            # end_1 = time.time()
+            # print("TIME: OCR_tesseract: {}".format(end_1 - start_1))
+            
+
+        
             
 
         ## Preprocess dataframe
@@ -161,7 +241,7 @@ class PDF_SEPARATOR():
 
         # Good idea??
         # Clean texts with more then 40 characters and less then 6
-        df = df[(df["text_len"] < 40) & (df["text_len"] > 3)]
+        df = df[(df["text_len"] < 60) & (df["text_len"] > 3)]
         if self.debugmode: print(df)
 
         return df
@@ -193,164 +273,21 @@ class PDF_SEPARATOR():
             print("More then one instrument detected!\n{}".format(instrument))
 
 
-        print("instrument: {},\ntext: {}".format(instrument, matching))
+        print("instrument: {},\ntext: {}".format(instrument, matching[0].strip()))
 
         return instrument[0]
 
 
-
-
-
-# def preprocess_pdf(pdf_path: str):
-
-#     pages = convert_from_path(pdf_path=pdf_path,
-#                               dpi=200,
-#                               last_page=4
-#                               )
-
-
-
-
-#     reader = PdfReader(pdf_path)
-#     # for page in reader.pages:
-
-        
-#     #     #ex = pdf.getPage(6)
-
-#     #     for image in page.images:
-
-#     #         open_cv_image = convert_from_bytes(image.data)
-#     #         # Convert RGB to BGR
-#     #         open_cv_image = open_cv_image[:, :, ::-1].copy()
-#     #         cv2.imshow("window_name", open_cv_image)
-#     #         cv2.waitKey(0)
-
-
-#     #         # with open(image.name, "wb") as fp:
-#     #         #     fp.write(image.data)
-
-
-#     # print(len(reader.pages))
-
-
-
-#     # Create dataframe with length equals number of pages
-
-#     # Generate jpgs of each page
-
-
-
-
-
-
-# # def convert_pdf_to_img(pdf_path):
-
-# #     pages = convert_from_path(pdf_path=pdf_path)
-    
-
-# #     i = 1
-# #     for page in pages:
-# #         image_name = "Page_" + str(i) + ".jpg"  
-# #         page.save(image_name, "JPEG")
-# #         i = i+1 
-
-
-# def mark_region(image_path):
-    
-#     im = cv2.imread(image_path)
-#     im_height, im_width, channels = im.shape
-
-#     gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
-#     #blur = cv2.GaussianBlur(gray, (9,9), 0)
-#     thresh1 = cv2.adaptiveThreshold(gray,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV,11,30)
-#     _,thresh = cv2.threshold(gray,127,255,cv2.THRESH_BINARY_INV)
-    
-#     cv2.imshow("window_name", thresh)
-#     cv2.waitKey(0)
-#     plt.figure(figsize=(10,10))
-#     plt.imshow(thresh, cmap=plt.cm.gray)
-
-
-#     # Dilate to combine adjacent text contours
-#     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5,5))
-#     dilate = cv2.dilate(thresh, kernel, iterations=4)
-#     cv2.imshow("window_name", dilate)
-#     cv2.waitKey(0)
-
-#     # Find contours, highlight text areas, and extract ROIs
-#     cnts = cv2.findContours(dilate, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-#     cnts = cnts[0] if len(cnts) == 2 else cnts[1]
-
-#     line_items_coordinates = []
-#     for c in cnts:
-#         area = cv2.contourArea(c)
-#         x,y,w,h = cv2.boundingRect(c)
-
-#         # if y >= 600 and x <= 1000:
-#         #     if area > 10000:
-#         #         image = cv2.rectangle(im, (x,y), (2200, y+h), color=(255,0,255), thickness=3)
-#         #         line_items_coordinates.append([(x,y), (2200, y+h)])
-
-#         if y <= im_height/3:
-#             if area > 500:
-#                 image = cv2.rectangle(im, (x,y), (x+w, y+h), color=(255,0,255), thickness=3)
-#                 line_items_coordinates.append([(x,y), (x+w, y+h)])
-
-#         # if y >= 400 and x<= 1000:
-#         #     image = cv2.rectangle(im, (x,y), (2200, y+h), color=(255,0,255), thickness=3)
-#         #     line_items_coordinates.append([(x,y), (2200, y+h)])
-
-#     return thresh, image, line_items_coordinates
-
-# def process_image_to_text(image, line_items_coordinates):
-
-#     # Create pandas dataframe
-#     df = pd.DataFrame(columns=['text'])
-
-#     for i in range(len(line_items_coordinates)):
-
-#         # get co-ordinates to crop the image
-#         c = line_items_coordinates[i]
-
-#         # cropping image img = image[y0:y1, x0:x1]
-#         img = image[c[0][1]:c[1][1], c[0][0]:c[1][0]]    
-
-#         plt.figure(figsize=(10,10))
-#         plt.imshow(img, cmap=plt.cm.gray)
-
-#         # convert the image to black and white for better OCR
-#         #ret,thresh1 = cv2.threshold(img,120,255,cv2.THRESH_BINARY)
-
-#         # pytesseract image to string to get results
-#         df.loc[i] = str(pytesseract.image_to_string(img, lang="deu")) # use german language (ä,ü,ö,ß,...)
-        
-
-#     ## Preprocess dataframe
-#     # Remove empty rows/ only spaces of dataframe
-#     print(df)
-#     df.replace('', np.nan, inplace=True)
-#     df.dropna(inplace=True)
-#     print(df)
-
-#     # Add character lenght
-#     df["text_len"] = df["text"].map(lambda calc: len(calc))
-
-#     # Good idea??
-#     # Clean texts with more then 40 characters and less then 6
-#     df = df[(df["text_len"] < 40) & (df["text_len"] > 5)]
-#     print(df)
-
-#     return df
-
-
-
-
-
-
 def main():
+
 
     #pdf_path = os.path.join(os.getcwd(), "Augenblicke - FH1.pdf")
     pdf_path = os.path.join(os.getcwd(), "testdata", "Augenblicke.pdf")
+
+    # Load config-yml-file with tesseract information
+    with open(os.path.join(os.getcwd(), "config.yml"), encoding='utf8') as f:
+        config = yaml.safe_load(f)
+        pytesseract.pytesseract.tesseract_cmd = config["tesseract_path"]
 
     PDF_OBJ = PDF_SEPARATOR(pdf_path=pdf_path,
                             debugmode=False)
