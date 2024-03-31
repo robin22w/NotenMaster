@@ -1,63 +1,84 @@
+#01
 Piccolo:
   filename: Piccolo
   filter: [Piccolo]
-Flute:
+#02
+Flöte:
   filename: Flöte
   filter: [Flöte,Flute]
+#03
 Oboe:
   filename: Oboe
   filter: [Oboe,Hobo]
+#04
 Fagott:
   filename: Fagott
   filter: [Fagott, Bassoon]
-Clarinet:
+#05
+Klarinette:
   filename: Klarinette
   filter: [Klarinette,Clarinet]
+#06
 Bassklarinette:
   filename: Bassklarinette
   filter: [Bassklarinette,Bass Clarinet]
+#07
 Altsaxophon:
   filename: Altsaxophon
   filter: [Altsaxophon,Alt-Saxofon,Alto Saxophone]
+#08
 Tenorsaxophon:
   filename: Tenorsaxophon
   filter: [Tenorsaxophon,Tenor-Saxofon,Tenor Saxophone]
+#09
 Baritonsaxophon:
   filename: Baritonsaxophon
   filter: [Baritonsaxophon,Bariton-Saxofon,Baritone Saxophone]
+#10
 Trompete:
   filename: Trompete
   filter: [Trompete,Trumpet]
-Fluegelhorn:
+#11
+Flügelhorn:
   filename: Fluegelhorn
   filter: [Flügelhorn,Flügel Horn,Piston]
+#12
 Horn:
   filename: Horn
   filter: [Horn]
+#13
 Posaune:
   filename: Posaune
   filter: [Posaune,Trombone]
+#14
 Tenorhorn:
   filename: Tenorhorn
   filter: [Tenorhorn]
+#15
 Bariton:
   filename: Bariton
   filter: [Bariton,Baritone]
+#16
 Tuba:
   filename: Tuba
   filter: [Tuba, Bass]
+#17
 E-Bass:
   filename: E-Bass
   filter: [E-Bass]
+#18
 Gitarre:
   filename: Gitarre
   filter: [Gitarre, Guitar]
+#19
 Keyboard:
   filename: Keyboard
   filter: [Keyboard, Klavier]
+#20
 Gesang:
   filename: Gesang
   filter: [Text, Gesang]
+#21
 Schlagzeug:
   filename: Schlagzeug
   filter: [Schlagzeug,Percussion,Drum Set,Pauke,Timpani,Mallets,Lyra]
