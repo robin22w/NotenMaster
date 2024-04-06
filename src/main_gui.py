@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
+from tkinter import LEFT
 from tkinter import filedialog
 import os
 import threading
@@ -7,7 +8,6 @@ import time
 import pandas as pd
 import yaml
 import json
-import csv
 
 from gui.treeview_edit import TreeViewEdit, sort_column
 from dataclass import PDF_File
@@ -165,31 +165,47 @@ class GUI_NOTENMASTER():
 
         self.treeview.pack(fill=tk.BOTH, expand=True)
 
+        self.label_info = tk.Label(result_window, text="")
+        self.label_info.pack(side="left", padx=10)
+
         # Button zum Speichern der Ergebnisse
         save_button = ttk.Button(result_window, text="Speichern", command=self.save_results)
-        save_button.pack(pady=10)
+        save_button.pack(side="left", padx=180, pady=10)
+
+
 
     def save_results(self):
-        self.Pdf_File.save_path = filedialog.askdirectory()
-        
-        #ToDo
+
         # Get current data
-        final_data = []
-        for row_id in self.treeview.get_children():
+        final_df = pd.DataFrame(columns=["page","instrument","stimme"])
+        for i,row_id in enumerate(self.treeview.get_children()):
             row = self.treeview.item(row_id)
             page = row["text"]
-            instrument, stimme, _ = row["values"]
-            final_data.append(page,instrument,stimme)
-            print(page,instrument,stimme)
+            instrument, stimme = row["values"][:2]
+            final_df.loc[i] = [page,instrument,stimme]
+        final_df = final_df.sort_values(by="page",ignore_index=True)
 
+        # Check for spelling errors
+        error_flag = False
+        for instrument in final_df["instrument"]:
+            if instrument in self.instruments_list:
+                continue
+            else:
+                error_flag = True
+        
+        if error_flag:
+            self.label_info.config(text="Spelling errors in instruments!", fg='#f00')
+        else:
+            self.Pdf_File.save_path = filedialog.askdirectory()
 
-        save_pdf_files(self.Pdf_File, self.instruments_list, self.folder_options, final_data)
-
-
-        self.root.destroy()
+            if self.Pdf_File.save_path == "":
+                self.label_info.config(text="Select Folder to save files!", fg='#f00')
+            else:
+                print(final_df)
+                save_pdf_files(self.Pdf_File, self.instruments_list, self.folder_options, final_df)
+                self.root.destroy()
     
     def destroy(self):
-
         self.root.destroy()
         
 

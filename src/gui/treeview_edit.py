@@ -99,7 +99,7 @@ def sort_column(tree, col, reverse):
 if __name__ == "__main__":
 
     # Read csv-file into pandas dataframe
-    csv_file = os.path.abspath(os.path.join(os.path.dirname( __file__ ), "..", "testdata/table_test.csv"))
+    csv_file = os.path.abspath(os.path.join(os.path.dirname( __file__ ), "..", "..", "testdata/table_test.csv"))
     df = pd.read_csv(csv_file)
     df_list = list(df.columns.values)
     df_rset = df.to_numpy().tolist()

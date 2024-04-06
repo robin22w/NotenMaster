@@ -9,7 +9,7 @@ class PDF_File():
     num_pages: int = 10
     folder_option: str = "Rot"
     dataframe: pd.DataFrame = pd.DataFrame()
-    save_path: str = "C:/dummy.pdf"
+    save_path: str = ""
 
 
 if __name__ == "__main__":

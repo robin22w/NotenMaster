@@ -1,84 +1,76 @@
 #01
-Piccolo:
-  filename: Piccolo
-  filter: [Piccolo]
-#02
-Flöte:
+Floete:
   filename: Flöte
-  filter: [Flöte,Flute]
-#03
+  filter: [Flöte,Flute,Piccolo]
+#02
 Oboe:
   filename: Oboe
   filter: [Oboe,Hobo]
+#03
+Klarinette:
+  filename: Klarinette
+  filter: [Klarinette,Clarinet,Bassklarinette,Bass Clarinet]
 #04
 Fagott:
   filename: Fagott
   filter: [Fagott, Bassoon]
 #05
-Klarinette:
-  filename: Klarinette
-  filter: [Klarinette,Clarinet]
-#06
-Bassklarinette:
-  filename: Bassklarinette
-  filter: [Bassklarinette,Bass Clarinet]
-#07
-Altsaxophon:
-  filename: Altsaxophon
+Alt-Sax:
+  filename: Alt-Sax
   filter: [Altsaxophon,Alt-Saxofon,Alto Saxophone]
-#08
-Tenorsaxophon:
-  filename: Tenorsaxophon
+#06
+Tenor-Sax:
+  filename: Tenor-Sax
   filter: [Tenorsaxophon,Tenor-Saxofon,Tenor Saxophone]
-#09
-Baritonsaxophon:
-  filename: Baritonsaxophon
+#07
+Bari-Sax:
+  filename: Bari-Sax
   filter: [Baritonsaxophon,Bariton-Saxofon,Baritone Saxophone]
+#08
+Fluegelhorn:
+  filename: Fluegelhorn
+  filter: [Flügelhorn,Flügel Horn,Piston]
+#09
+Horn:
+  filename: Horn
+  filter: [Horn]
 #10
 Trompete:
   filename: Trompete
   filter: [Trompete,Trumpet]
 #11
-Flügelhorn:
-  filename: Fluegelhorn
-  filter: [Flügelhorn,Flügel Horn,Piston]
-#12
-Horn:
-  filename: Horn
-  filter: [Horn]
-#13
-Posaune:
-  filename: Posaune
+Posaune in c:
+  filename: Posaune in c
   filter: [Posaune,Trombone]
+#12
+Posaune in b:
+  filename: Posaune in b
+  filter: [Posaune,Trombone]
+#13
+Tenorhorn-Bariton:
+  filename: Tenorhorn-Bariton
+  filter: [Tenorhorn,Bariton,Baritone]
 #14
-Tenorhorn:
-  filename: Tenorhorn
-  filter: [Tenorhorn]
+Bass in c:
+  filename: Bass in c
+  filter: [Tuba, Bass]
 #15
-Bariton:
-  filename: Bariton
-  filter: [Bariton,Baritone]
-#16
-Tuba:
-  filename: Tuba
+Bass andere:
+  filename: Bass andere
   filter: [Tuba, Bass]
 #17
 E-Bass:
   filename: E-Bass
   filter: [E-Bass]
-#18
-Gitarre:
-  filename: Gitarre
-  filter: [Gitarre, Guitar]
-#19
-Keyboard:
-  filename: Keyboard
-  filter: [Keyboard, Klavier]
 #20
 Gesang:
   filename: Gesang
   filter: [Text, Gesang]
 #21
-Schlagzeug:
-  filename: Schlagzeug
+Schlagwerk:
+  filename: Schlagwerk
   filter: [Schlagzeug,Percussion,Drum Set,Pauke,Timpani,Mallets,Lyra]
+#19
+Rest:
+  filename: Rest
+  filter: [Keyboard,Klavier,Gitarre,Guitar]

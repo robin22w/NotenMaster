@@ -3,36 +3,61 @@ import os
 import yaml
 from pathlib import Path
 import shutil
+import time
+from time import localtime, strftime
+from PyPDF2 import PdfWriter, PdfReader
 
 from dataclass import PDF_File
 
 
 # Create folder in save dir
-def save_pdf_files(Pdf_File, instruments_list, folder_options, final_data):
+def save_pdf_files(Pdf_File, instruments_list, folder_options, final_df):
     
+    # Create dir
+    save_dir = Path(Pdf_File.save_path) / f"TaNoKo_{strftime('%Y-%m-%d_%H-%M-%S', localtime(time.time()))}_{Pdf_File.filename}"
+    save_dir.mkdir(parents=True, exist_ok=True)  # make dir
 
-
- 
-    dir = Path(Pdf_File.save_path)
-    # if dir.exists():
-    #     shutil.rmtree(dir)  # delete dir
-
-
-    for b in [dir / ("{:02d} ".format(i) + x) for i,x in enumerate(instruments_list)]:
+    # Iterate over instruments
+    for i, instrument in enumerate(instruments_list):
+        b = save_dir / ("{:02d} ".format(i+1) + instrument)
         b.mkdir(parents=True, exist_ok=True)  # make dir
+
+        # Iterate over folders
         for s in [b / y for y in folder_options]:
             s.mkdir(parents=True, exist_ok=True)  # make dir
+            
+            # Check folder selection and create folder for song name
+            if Pdf_File.folder_option in str(s):
+                k = s / Pdf_File.filename
+                k.mkdir(parents=True, exist_ok=True)
+
+                # Check if matching instrument in final_df
+                if not final_df.loc[final_df["instrument"] == instrument].empty:
+                    
+                    for index, row in final_df.loc[final_df["instrument"] == instrument].iterrows():
+                        
+                        # Check if stimme has a value
+                        if row["stimme"] == "nan":
+                            stimme = ""
+                        else:
+                            stimme = str(row["stimme"])
+
+                        inputpdf = PdfReader(open(Pdf_File.filepath, "rb"))
+                        output = PdfWriter()
+                        output.add_page(inputpdf.pages[index])
+                        filename = k / (f"{Pdf_File.filename} - {instrument}" + f"{(' ' + stimme) if not stimme == '' else ''}.pdf")
+                        # Write file to disk
+                        with open(filename, "wb") as outputStream:
+                            output.write(outputStream)
 
 
-    for data in final_data:
-        page,instrument,stimme = data
-        
-        
-        
-        
-        filename = f"{Pdf_File.filename} - {instrument} {stimme}.pdf"
-
-        pass
+                        # for i in range(len(inputpdf.pages)):
+                        #     output = PdfWriter()
+                        #     output.add_page(inputpdf.pages[i])
+                        #     with open("document-page%s.pdf" % i, "wb") as outputStream:
+                        #         output.write(outputStream)
+                else:
+                    continue
 
 
 if __name__ == "__main__":

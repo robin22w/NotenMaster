@@ -293,7 +293,7 @@ def main():
 
 
     #pdf_path = os.path.join(os.getcwd(), "Augenblicke - FH1.pdf")
-    pdf_path = os.path.join(os.getcwd(), "testdata", "Augenblicke.pdf")
+    pdf_path = os.path.join(os.getcwd(), "testdata", "Augenblicke_test.pdf")
     #pdf_path = os.path.join(os.getcwd(), "testdata", "Gabrielas Song - KL1.pdf")
 
     # Load config-yml-file with tesseract information
