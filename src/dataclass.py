@@ -14,5 +14,4 @@ class PDF_File():
 
 if __name__ == "__main__":
 
-    file = PDF_File()
-    print(file)
+    print(PDF_File())

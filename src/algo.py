@@ -11,7 +11,6 @@ import PyPDF2
 #import pytesseract
 import yaml
 from pdf2image import convert_from_path
-#from pypdf import PdfReader
 from tqdm import tqdm
 import tesserocr
 #from tesserocr import PyTessBaseAPI
@@ -34,11 +33,12 @@ class PDF_SEPARATOR():
 
         # Load yml-file
         with open(os.path.join(os.getcwd(), "instruments.yml"), encoding='utf8') as f:
-            self.config = yaml.safe_load(f)
-            print(json.dumps(self.config, indent=2, ensure_ascii=False))
+            self.instruments = yaml.safe_load(f)
+            print(json.dumps(self.instruments, indent=2, ensure_ascii=False))
 
         # Create lookup-table
-        self.lookup_table = create_lookup_table(self.config, self.debugmode)
+        self.lookup_table = create_lookup_table(self.instruments, self.debugmode)
+        self.instruments_list = self.instruments.keys()
 
         # Get number of pdf-pages
         with open(pdf_path, 'rb') as f:
@@ -49,38 +49,70 @@ class PDF_SEPARATOR():
         self.pdf_page_instrument_table = pd.DataFrame(
             np.stack((
                 np.arange(1,self.num_pdf_pages+1),
-                np.zeros(self.num_pdf_pages)),
+                np.zeros((self.num_pdf_pages))),
                 axis=1),
             columns=["page", "instrument"]
             )
+        self.pdf_page_instrument_table = self.pdf_page_instrument_table.join(pd.DataFrame(
+                {
+                    'detection': None,
+                    'stimme': None,
+                    'melodic': None,
+                    'accuracy': None
+                }, index=self.pdf_page_instrument_table.index
+            ))
+        
+        self.p = 0  # Initial page
 
     def process_pdf_pages(self):
         """Iterate over pages and store information in dataframe
         """
-        for self.p in tqdm(range(1,self.num_pdf_pages+1)):
-            img = convert_from_path(pdf_path=self.pdf_path,
-                                    dpi=200,
-                                    first_page=self.p,
-                                    last_page=self.p)
+        self.p +=1
+        #for self.p in tqdm(range(1,self.num_pdf_pages+1)):
+        img = convert_from_path(pdf_path=self.pdf_path,
+                                dpi=200,
+                                first_page=self.p,
+                                last_page=self.p)
 
 
-            # 1. Get Regions of Interest
-            thresh, line_items_coordinates = self.mark_regions_of_interest(img[0])
+        # 1. Get Regions of Interest
+        thresh, line_items_coordinates = self.mark_regions_of_interest(img[0])
 
-            # 2. Performing OCR (Optical character recognition) incl. preprocessing
-            start_2 = time.time()
-            text_df = self.process_image_to_text(thresh, line_items_coordinates)
-            end_2 = time.time()
-            print("TIME: OCR: {}".format(end_2 - start_2))
+        # 2. Performing OCR (Optical character recognition) incl. preprocessing
+        start_2 = time.time()
+        text_df = self.process_image_to_text(thresh, line_items_coordinates)
+        end_2 = time.time()
+        print("TIME: OCR: {}".format(end_2 - start_2))
 
-            # 3. Classify translated text
-            instrument = self.classify_instrument(text_df)
+        # 3. Classify translated text
+        instrument = self.classify_instrument(text_df)
 
-            # 4. Store information in dataframe
-            self.pdf_page_instrument_table.loc[self.pdf_page_instrument_table["page"] == self.p, ["instrument"]] = instrument
+        if len(instrument) > 1:
+            print("More then one instrument detected!\n{}".format(instrument))
 
-        print(self.pdf_page_instrument_table)
-                
+            # 4a. Store information in dataframe
+            # Multiple detection of instruments
+            multiple_detection_code = 0
+            for single_inst in instrument:
+                inst, detection, number, distinction, overlap = single_inst
+                self.pdf_page_instrument_table.loc[multiple_detection_code +
+                    self.pdf_page_instrument_table.index[
+                        self.pdf_page_instrument_table["page"] == self.p
+                        ].item()
+                    ] = multiple_detection_code + self.p, inst, detection, number, distinction, overlap
+                multiple_detection_code += 1000
+
+        else:
+            if instrument is None:
+                detection, number, distinction, overlap = None, None, None, None
+            else:
+                instrument, detection, number, distinction, overlap = instrument[0]
+            # 4b. Store information in dataframe
+            self.pdf_page_instrument_table.loc[
+                self.pdf_page_instrument_table.index[
+                    self.pdf_page_instrument_table["page"] == self.p
+                    ]
+                ] = self.p, instrument, detection, number, distinction, overlap
             
     def mark_regions_of_interest(self, img):
         """
@@ -136,65 +168,6 @@ class PDF_SEPARATOR():
         # Create pandas dataframe
         df = pd.DataFrame(columns=['text'])
 
-        # ########### Threading ##############
-        # # Maximum number of threads
-        # max_threads = 16  # Adjust this based on your requirements
-
-        # # Semaphore to limit the number of concurrent threads
-        # thread_semaphore = threading.Semaphore(max_threads)
-
-        # def perform_ocr_threaded(img, id):
-        #     df.loc[id] = tesserocr.image_to_text(Image.fromarray(img), lang="deu")
-
-        # def worker(img, id):
-        #     with thread_semaphore:
-        #         perform_ocr_threaded(img, id)
-        
-        # # Create threads for each image
-        # threads = []
-        # for id, c in zip(range(len(line_items_coordinates)), line_items_coordinates):
-        #     img = image[c[0][1]:c[1][1], c[0][0]:c[1][0]]
-        #     thread = threading.Thread(target=worker, args=(img,id,))
-        #     threads.append(thread)
-        #     thread.start()
-
-        # # Warten Sie darauf, dass alle Threads beendet sind
-        # for thread in threads:
-        #     thread.join()
-
-        # print("All threads have finished processing.")
-
-        # ############ Multiprocessing ##############
-
-        # # Maximum number of processes
-        # max_processes = 4  # Adjust this based on your requirements
-
-        # # Semaphore to control concurrent access
-        # semaphore = multiprocessing.Semaphore(max_processes)
-
-        # # def perform_ocr_threaded(img, id):
-        # #     df.loc[id] = tesserocr.image_to_text(Image.fromarray(img), lang="deu")
-
-        # # def worker(img, id, semaphore):
-        # #     with semaphore:
-        # #         perform_ocr_threaded(img, id)
-
-        # # Create a list to store process objects
-        # processes = []
-
-        # for id, c in zip(range(len(line_items_coordinates)), line_items_coordinates):
-        #     # Create a new process for each image
-        #     img = image[c[0][1]:c[1][1], c[0][0]:c[1][0]]
-        #     process = multiprocessing.Process(target=worker, args=(img,id,semaphore,))
-        #     processes.append(process)
-        #     process.start()
-
-        # # Wait for all processes to finish
-        # for process in processes:
-        #     process.join()
-
-        # print("All processes have finished processing.")
-
 
         for i in range(len(line_items_coordinates)):
 
@@ -203,19 +176,6 @@ class PDF_SEPARATOR():
 
             # cropping image img = image[y0:y1, x0:x1]
             img = image[c[0][1]:c[1][1], c[0][0]:c[1][0]]   
-
-            # #if self.debugmode:
-            # if i == 5:
-            #     plt.figure(figsize=(10,10))
-            #     plt.imshow(img, cmap=plt.cm.gray)
-
-            # pytesseract image to string to get results
-            # TODO: Speedup: https://pypi.org/project/tesserocr/
-            # https://stackoverflow.com/questions/66334737/pytesseract-is-very-slow-for-real-time-ocr-any-way-to-optimise-my-code
-            # print(tesserocr.tesseract_version())  # print tesseract-ocr version
-            # print(tesserocr.get_languages())
-            #PyTessBaseAPI(path='C:/Program Files/Tesseract-OCR/tessdata')
-            #start_10 = time.time()
             
             sharpening_kernel = np.array([[-1, -1, -1],
                                           [-1, 9, -1],
@@ -227,23 +187,18 @@ class PDF_SEPARATOR():
             # cv2.imshow('Sharpened Image', image_blured)
             # cv2.waitKey(0)
             df.loc[i] = tesserocr.image_to_text(Image.fromarray(image_blured), lang="deu")
-            #end_10 = time.time()
-            #print("TIME: OCR_tesseract_better?: {}".format(end_10 - start_10))
-
-
-            # start_1 = time.time()
-            # df.loc[i] = str(pytesseract.image_to_string(img, lang="deu")) # use german language (ä,ü,ö,ß,...)
-            # end_1 = time.time()
-            # print("TIME: OCR_tesseract: {}".format(end_1 - start_1))
-            
-
-        
             
 
         ## Preprocess dataframe
         # Remove empty rows/ only spaces of dataframe
         df.replace('', np.nan, inplace=True)
         df.dropna(inplace=True)
+
+        # Define a function to remove '\n' from a string
+        def remove_newlines(text):
+            return text.replace('\n', '')
+        df['text'] = df['text'].apply(remove_newlines)
+
         #if self.debugmode: print(df)
         print(df)
 
@@ -268,43 +223,127 @@ class PDF_SEPARATOR():
             print("No match for page {}".format(self.p))
             return None
 
+        # Treat Posaunen and Bass differently due to same filters
+        mask_posaune = self.lookup_table['instrument'].isin(["Posaune in b","Posaune in c"])
+        posaunen_filter = self.lookup_table[mask_posaune]["filters"]
+        mask_bass = self.lookup_table['instrument'].isin(["Bass in c","Bass andere"])
+        bass_filter = self.lookup_table[mask_bass]["filters"]
+
         instrument = []
         for f in self.lookup_table["filters"]:
             if f in matching[0]:
-                if instrument: # Check if list has been already filled
-                    # Check if new detection is already satisfied, if yes: skip
-                    if any(self.lookup_table.loc[self.lookup_table['filters'] == f]["instrument"].item() in x for x in instrument):
-                        continue
-                    else:
-                        instrument.append(self.lookup_table.loc[self.lookup_table['filters'] == f]["instrument"].item())
+                
+                # Remove special characters in string
+                for ch in ['\\','`','*','{','}','[',']','/','>','<','^','?','#','+','.','!','$','\'']:  # '(',')'
+                    if ch in matching[0]:
+                        matching[0] = matching[0].replace(ch,'')
+
+                ## Calculate Overlap
+                # Percentage of matching characters
+                overlap = round(self.calculate_overlap(matching[0], f), 2)
+
+                numbers, distinction = self.get_stimme(matching[0])
+
+                if distinction is None:
+                    distinction = "None"
+
+                if f in (list(posaunen_filter.values) + list(bass_filter.values)):
+
+                    if f in list(posaunen_filter.values):
+                            if distinction.lower() == "c" or "c" in matching[0].lower():
+                                instrument.append(("Posaune in c", matching[0], numbers, distinction, overlap))
+                            else:
+                                # Default??
+                                instrument.append(("Posaune in b", matching[0], numbers, distinction, overlap))
+
+                    if f in list(bass_filter.values):
+                            if distinction.lower() == "c" or "c" in matching[0].lower():
+                                instrument.append(("Bass in c", matching[0], numbers, distinction, overlap))
+                            else:
+                                instrument.append(("Bass andere", matching[0], numbers, distinction, overlap))
+                
                 else:
-                    instrument.append(self.lookup_table.loc[self.lookup_table['filters'] == f]["instrument"].item())
+                    instrument.append((self.lookup_table.loc[self.lookup_table['filters'] == f]["instrument"].item(), matching[0], numbers, distinction, overlap))
 
-        if len(instrument) > 1:
-            print("More then one instrument detected!\n{}".format(instrument))
+        if not instrument:
+            return None
 
+        # Sort by best overlap
+        instrument = sorted(instrument, key=lambda x: x[4], reverse=True) 
+        print("instrument: {}\ntext: {}".format(instrument, matching[0].strip()))
 
-        print("instrument: {},\ntext: {}".format(instrument, matching[0].strip()))
+        return instrument  # Retrun best guess (overlap)
+    
+    def calculate_overlap(self, detection_string, filter_string):
+        if not filter_string:
+            return 0
+        
+        detection_len = len(detection_string)
+        filter_len = len(filter_string)
+        
+        max_matches = 0
+        
+        for i in range(detection_len):
+            for j in range(filter_len):
+                if detection_string[i] == filter_string[j]:
+                    k = 1
+                    while (i+k < detection_len) and (j+k < filter_len) and (detection_string[i+k] == filter_string[j+k]):
+                        k += 1
+                    if k > max_matches:
+                        max_matches = k
+        
+        return max_matches / detection_len
+    
+    def get_stimme(self, input_string):
 
-        return instrument[0]
+        # Get numbers in detection
+        numbers = self.extract_numbers(input_string)
 
+        # Get melodic in detection
+        distinction = self.extract_melodic(input_string) # c, b, es
+
+        return numbers, distinction
+
+    def extract_numbers(self, input_string):
+        numbers = []
+        current_number = ""
+        for char in input_string:
+            if char.isdigit():
+                current_number += char
+            elif current_number:
+                numbers.append(int(current_number))
+                current_number = ""
+        if current_number:  # Überprüfen Sie, ob am Ende der Zeichenkette eine Zahl verbleibt
+            numbers.append(int(current_number))
+        if numbers:
+            if len(numbers) > 1:
+                return "multiple"
+        else:
+            return None
+        return numbers[0]
+
+    def extract_melodic(self, input_string):
+
+        for i, split in enumerate(input_string.split(" ")):
+            if split == "in":
+                try:
+                    return input_string.split(" ")[i+1]
+                except:
+                    return None
+    
+    def get_current_page(self):
+        return self.p
 
 def main():
 
-
     #pdf_path = os.path.join(os.getcwd(), "Augenblicke - FH1.pdf")
-    pdf_path = os.path.join(os.getcwd(), "testdata", "Augenblicke_test.pdf")
+    pdf_path = os.path.join(os.getcwd(), "testdata", "Augenblicke_possaunen_tuben.pdf")
     #pdf_path = os.path.join(os.getcwd(), "testdata", "Gabrielas Song - KL1.pdf")
-
-    # Load config-yml-file with tesseract information
-    # with open(os.path.join(os.getcwd(), "config.yml"), encoding='utf8') as f:
-    #     config = yaml.safe_load(f)
-    #     pytesseract.pytesseract.tesseract_cmd = config["tesseract_path"]
 
     PDF_OBJ = PDF_SEPARATOR(pdf_path=pdf_path,
                             debugmode=False)
-    PDF_OBJ.process_pdf_pages()
-
+    pdf_page_instrument_table = PDF_OBJ.process_pdf_pages()
+    print(pdf_page_instrument_table)
 
     cv2.destroyAllWindows()
 

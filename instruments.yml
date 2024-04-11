@@ -57,7 +57,7 @@ Bass in c:
 #15
 Bass andere:
   filename: Bass andere
-  filter: [Tuba, Bass]
+  filter: [Tuba, Bass]  # ToDo
 #17
 E-Bass:
   filename: E-Bass

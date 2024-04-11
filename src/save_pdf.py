@@ -35,17 +35,31 @@ def save_pdf_files(Pdf_File, instruments_list, folder_options, final_df):
                 if not final_df.loc[final_df["instrument"] == instrument].empty:
                     
                     for index, row in final_df.loc[final_df["instrument"] == instrument].iterrows():
-                        
+
                         # Check if stimme has a value
-                        if row["stimme"] == "nan":
+                        if row["stimme"] == "None":
                             stimme = ""
                         else:
                             stimme = str(row["stimme"])
 
+                        detection = row["detection"]
+
                         inputpdf = PdfReader(open(Pdf_File.filepath, "rb"))
                         output = PdfWriter()
-                        output.add_page(inputpdf.pages[index])
-                        filename = k / (f"{Pdf_File.filename} - {instrument}" + f"{(' ' + stimme) if not stimme == '' else ''}.pdf")
+                        try:
+                            output.add_page(inputpdf.pages[index])
+                        except:
+                            page = int(final_df.loc[index]["page"])
+                            for i in range(4):
+                                page -=1000
+                                try:
+                                    index = final_df.index[final_df["page"] == page].item()
+                                    output.add_page(inputpdf.pages[index])
+                                    break
+                                except:
+                                    continue
+
+                        filename = k / (f"{Pdf_File.filename} - {detection}.pdf") # + f"{(' ' + stimme) if not stimme == '' else ''}.pdf")
                         # Write file to disk
                         with open(filename, "wb") as outputStream:
                             output.write(outputStream)

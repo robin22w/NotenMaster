@@ -13,6 +13,7 @@ from gui.treeview_edit import TreeViewEdit, sort_column
 from dataclass import PDF_File
 from save_pdf import save_pdf_files
 from utils.utils import create_lookup_table
+from algo import PDF_SEPARATOR
 
 
 class GUI_NOTENMASTER():
@@ -74,7 +75,7 @@ class GUI_NOTENMASTER():
         button_stop.grid(row=3, column=1, columnspan=1, padx=5, pady=5, sticky="ew")
 
         # Fortschrittsanzeige
-        self.progress_bar = ttk.Progressbar(frame, orient="horizontal", length=300, mode='indeterminate')
+        self.progress_bar = ttk.Progressbar(frame, orient="horizontal", length=300, mode='determinate')
         self.progress_bar.grid(row=4, column=0, columnspan=3, padx=5, pady=5, sticky="ew")
 
         # Statusanzeige
@@ -88,7 +89,8 @@ class GUI_NOTENMASTER():
         # Strecke die letzte Zeile des Rahmens vertikal
         frame.grid_rowconfigure(6, weight=1)
 
-        running = False  # Variable zur Verfolgung des Programmzustands
+        global running  # Flag to control the processing loop
+        running = False
         
 
     def select_file(self):
@@ -114,32 +116,49 @@ class GUI_NOTENMASTER():
         running = True
         self.Pdf_File.filename = self.entry_file.get()
         self.Pdf_File.folder_option = self.dropdown_var.get()
-        self.progress_bar.start(10)  # Starte Fortschrittsanzeige für 10 Sekunden
         self.status_label.config(text="Verarbeitung läuft...")
         self.update_info()  # Aktualisiere Infofenster nach Ausführung des Programms
+        # Start threading
         threading.Thread(target=self.simulate_processing).start()
 
     def simulate_processing(self):
+
+        PDF_OBJ = PDF_SEPARATOR(pdf_path=self.Pdf_File.filepath,
+                                debugmode=False)
+        self.progress_bar.configure(maximum=PDF_OBJ.num_pdf_pages)
+
+        #for page in range(1,PDF_OBJ.num_pdf_pages+1):
+
         global running
-        while running:
-            time.sleep(1)  # Regelmäßige Überprüfung alle 1 Sekunde
+        while running and PDF_OBJ.get_current_page() < PDF_OBJ.num_pdf_pages:
+            time.sleep(0.1)  # Regelmäßige Überprüfung alle 1 Sekunde
             # Hier kannst du den Code einfügen, der das Programm ausführt
             # Beispiel: process_file(filename, selected_option)
+            # Process file
+            PDF_OBJ.process_pdf_pages()
+            self.progress_bar.step(1.0)
+            #running = False
         self.progress_bar.stop()
-        self.status_label.config(text="Verarbeitung gestoppt.")
+        self.status_label.config(text="Verarbeitung fertig.")
+        self.pdf_page_instrument_table = PDF_OBJ.pdf_page_instrument_table
         self.show_results()
 
     def stop_program(self):
         global running
         running = False
+        self.status_label.config(text="Verarbeitung gestoppt.")
+        self.root.destroy()
 
     def show_results(self):
         result_window = tk.Toplevel(self.root)
         result_window.title("Results")
+        result_window.geometry('1000x500')
+
+        df = self.pdf_page_instrument_table
 
         # Read csv-file into pandas dataframe
-        csv_file = os.path.abspath(os.path.join(os.path.dirname( __file__ ), "..", "testdata/table_test.csv"))
-        df = pd.read_csv(csv_file)
+        #csv_file = os.path.abspath(os.path.join(os.path.dirname( __file__ ), "..", "testdata/table_test.csv"))
+        #df = pd.read_csv(csv_file)
         df_list = list(df.columns.values)
         df_rset = df.to_numpy().tolist()
         for i, dt in enumerate(df_rset):
@@ -151,9 +170,11 @@ class GUI_NOTENMASTER():
 
         self.treeview = TreeViewEdit(result_window, columns = df_list[1:])
         self.treeview.heading("#0", text="Index", command=lambda: sort_column(self.treeview, "#0", False))
-        self.treeview.heading("Instrument", text="Instrument", command=lambda: sort_column(self.treeview, "Instrument", False))
-        self.treeview.heading("Stimme", text="Stimme", command=lambda: sort_column(self.treeview, "Stimme", False))
-        self.treeview.heading("Genauigkeit", text="Genauigkeit", command=lambda: sort_column(self.treeview, "Genauigkeit", False))
+        self.treeview.heading("instrument", text="instrument", command=lambda: sort_column(self.treeview, "instrument", False))
+        self.treeview.heading("detection", text="detection", command=lambda: sort_column(self.treeview, "detection", False))
+        self.treeview.heading("stimme", text="stimme", command=lambda: sort_column(self.treeview, "stimme", False))
+        self.treeview.heading("melodic", text="melodic", command=lambda: sort_column(self.treeview, "melodic", False))
+        self.treeview.heading("accuracy", text="accuracy", command=lambda: sort_column(self.treeview, "accuracy", False))
 
         for i in df_list[1:]:
             self.treeview.column(i,width=100,anchor='c')
@@ -172,29 +193,37 @@ class GUI_NOTENMASTER():
         save_button = ttk.Button(result_window, text="Speichern", command=self.save_results)
         save_button.pack(side="left", padx=180, pady=10)
 
-
-
     def save_results(self):
 
         # Get current data
-        final_df = pd.DataFrame(columns=["page","instrument","stimme"])
+        final_df = pd.DataFrame(columns=["page","instrument","detection","stimme","melodic"])
         for i,row_id in enumerate(self.treeview.get_children()):
             row = self.treeview.item(row_id)
             page = row["text"]
-            instrument, stimme = row["values"][:2]
-            final_df.loc[i] = [page,instrument,stimme]
+            instrument, detection, stimme, melodic = row["values"][:4]
+            final_df.loc[i] = [page,instrument,detection,stimme,melodic]
         final_df = final_df.sort_values(by="page",ignore_index=True)
 
         # Check for spelling errors
-        error_flag = False
+        error_flag_instrument = False
+        error_flag_detection = False
         for instrument in final_df["instrument"]:
             if instrument in self.instruments_list:
                 continue
             else:
-                error_flag = True
+                error_flag_instrument = True
         
-        if error_flag:
-            self.label_info.config(text="Spelling errors in instruments!", fg='#f00')
+        for detection in final_df["detection"]:
+            if detection == "None":
+                error_flag_detection = True
+            else:
+                continue
+        
+        if error_flag_instrument or error_flag_detection:
+            if error_flag_instrument:
+                self.label_info.config(text="Spelling errors in instruments!", fg='#f00')
+            elif error_flag_detection:
+                self.label_info.config(text="\"None\" not allowed in detection!", fg='#f00')
         else:
             self.Pdf_File.save_path = filedialog.askdirectory()
 
@@ -204,9 +233,6 @@ class GUI_NOTENMASTER():
                 print(final_df)
                 save_pdf_files(self.Pdf_File, self.instruments_list, self.folder_options, final_df)
                 self.root.destroy()
-    
-    def destroy(self):
-        self.root.destroy()
         
 
 if __name__ == "__main__":
