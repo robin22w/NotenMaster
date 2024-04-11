@@ -2,6 +2,7 @@ import json
 import os
 #os.environ["TESSDATA_PREFIX"] = 'C:/Program Files/Tesseract-OCR/tessdata'
 import time
+from itertools import groupby
 
 import cv2
 import matplotlib.pyplot as plt
@@ -87,32 +88,55 @@ class PDF_SEPARATOR():
         # 3. Classify translated text
         instrument = self.classify_instrument(text_df)
 
-        if len(instrument) > 1:
-            print("More then one instrument detected!\n{}".format(instrument))
-
-            # 4a. Store information in dataframe
-            # Multiple detection of instruments
-            multiple_detection_code = 0
-            for single_inst in instrument:
-                inst, detection, number, distinction, overlap = single_inst
-                self.pdf_page_instrument_table.loc[multiple_detection_code +
-                    self.pdf_page_instrument_table.index[
-                        self.pdf_page_instrument_table["page"] == self.p
-                        ].item()
-                    ] = multiple_detection_code + self.p, inst, detection, number, distinction, overlap
-                multiple_detection_code += 1000
-
-        else:
-            if instrument is None:
-                detection, number, distinction, overlap = None, None, None, None
-            else:
-                instrument, detection, number, distinction, overlap = instrument[0]
-            # 4b. Store information in dataframe
+        if instrument == None:
+            detection, number, distinction, overlap = None, None, None, None
             self.pdf_page_instrument_table.loc[
                 self.pdf_page_instrument_table.index[
                     self.pdf_page_instrument_table["page"] == self.p
                     ]
                 ] = self.p, instrument, detection, number, distinction, overlap
+        
+        else:
+            if len(instrument) > 1:
+                print("More then one instrument detected!\n{}".format(instrument))
+
+                # Skip if identical instrument category
+                detected_instruments = [x[0] for x in instrument]
+                g = groupby(detected_instruments)
+                if next(g, True) and not next(g, False):
+                    instrument, detection, number, distinction, overlap = instrument[0]
+                    self.pdf_page_instrument_table.loc[
+                        self.pdf_page_instrument_table.index[
+                            self.pdf_page_instrument_table["page"] == self.p
+                            ]
+                        ] = self.p, instrument, detection, number, distinction, overlap
+                    
+                else:
+                    # 4a. Store information in dataframe
+                    # Multiple detection of instruments
+                    multiple_detection_code = 0
+                    for single_inst in instrument:
+                        inst, detection, number, distinction, overlap = single_inst
+                        self.pdf_page_instrument_table.loc[multiple_detection_code +
+                            self.pdf_page_instrument_table.index[
+                                self.pdf_page_instrument_table["page"] == self.p
+                                ].item()
+                            ] = multiple_detection_code + self.p, inst, detection, number, distinction, overlap
+                        multiple_detection_code += 1000
+                    
+
+
+            else:
+                if instrument is None:
+                    detection, number, distinction, overlap = None, None, None, None
+                else:
+                    instrument, detection, number, distinction, overlap = instrument[0]
+                # 4b. Store information in dataframe
+                self.pdf_page_instrument_table.loc[
+                    self.pdf_page_instrument_table.index[
+                        self.pdf_page_instrument_table["page"] == self.p
+                        ]
+                    ] = self.p, instrument, detection, number, distinction, overlap
             
     def mark_regions_of_interest(self, img):
         """
@@ -234,7 +258,7 @@ class PDF_SEPARATOR():
             if f in matching[0]:
                 
                 # Remove special characters in string
-                for ch in ['\\','`','*','{','}','[',']','/','>','<','^','?','#','+','.','!','$','\'']:  # '(',')'
+                for ch in ['\\','`','*','{','}','[',']','/','>','<','^','?','#','+','.','!','$','\'','@','€']:  # '(',')'
                     if ch in matching[0]:
                         matching[0] = matching[0].replace(ch,'')
 

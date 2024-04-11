@@ -3,6 +3,7 @@ from tkinter import ttk
 from tkinter import LEFT
 from tkinter import filedialog
 import os
+import sys
 import threading
 import time
 import pandas as pd
@@ -148,6 +149,7 @@ class GUI_NOTENMASTER():
         running = False
         self.status_label.config(text="Verarbeitung gestoppt.")
         self.root.destroy()
+        sys.exit()
 
     def show_results(self):
         result_window = tk.Toplevel(self.root)
