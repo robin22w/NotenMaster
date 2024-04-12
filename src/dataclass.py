@@ -5,7 +5,8 @@ import pandas as pd
 @dataclass
 class PDF_File():
     filename: str = "Dummy"
-    filepath: str = "C:/dummy.pdf"
+    filepath: str = ""
+    excelpath: str = ""
     num_pages: int = 10
     folder_option: str = "Rot"
     dataframe: pd.DataFrame = pd.DataFrame()

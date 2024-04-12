@@ -2,7 +2,6 @@ import pandas as pd
 import os
 import yaml
 from pathlib import Path
-import shutil
 import time
 from time import localtime, strftime
 from PyPDF2 import PdfWriter, PdfReader
@@ -14,7 +13,7 @@ from dataclass import PDF_File
 def save_pdf_files(Pdf_File, instruments_list, folder_options, final_df):
     
     # Create dir
-    save_dir = Path(Pdf_File.save_path) / f"TaNoKo_{strftime('%Y-%m-%d_%H-%M-%S', localtime(time.time()))}_{Pdf_File.filename}"
+    save_dir = Path(Pdf_File.save_path) / f"{Pdf_File.filename}_{strftime('%Y-%m-%d_%H-%M-%S', localtime(time.time()))}"
     save_dir.mkdir(parents=True, exist_ok=True)  # make dir
 
     # Iterate over instruments
@@ -25,51 +24,48 @@ def save_pdf_files(Pdf_File, instruments_list, folder_options, final_df):
         # Iterate over folders
         for s in [b / y for y in folder_options]:
             s.mkdir(parents=True, exist_ok=True)  # make dir
-            
+
             # Check folder selection and create folder for song name
             if Pdf_File.folder_option in str(s):
-                k = s / Pdf_File.filename
-                k.mkdir(parents=True, exist_ok=True)
 
                 # Check if matching instrument in final_df
-                if not final_df.loc[final_df["instrument"] == instrument].empty:
-                    
-                    for index, row in final_df.loc[final_df["instrument"] == instrument].iterrows():
+                if instrument in list(final_df["Ordner"].values):
 
-                        # Check if stimme has a value
-                        if row["stimme"] == "None":
-                            stimme = ""
-                        else:
-                            stimme = str(row["stimme"])
+                    # Create folder for song title
+                    k = s / Pdf_File.filename
+                    k.mkdir(parents=True, exist_ok=True)
 
-                        detection = row["detection"]
+                    # Iterate over Stimmen
+                    for index, row in final_df.loc[final_df["Ordner"] == instrument].iterrows():
 
+                        # Create filename
+                        filename = k / (f"{Pdf_File.filename} - {row['Instrument']}" + f"{('.pdf') if pd.isnull(row['Notierung']) else ' - ' + row['Notierung']}.pdf")
+
+                        # Get page
+                        pagenumber = int(final_df.loc[index]["Seite"]) -1
+
+                        # Load pdf
                         inputpdf = PdfReader(open(Pdf_File.filepath, "rb"))
                         output = PdfWriter()
-                        try:
-                            output.add_page(inputpdf.pages[index])
-                        except:
-                            page = int(final_df.loc[index]["page"])
-                            for i in range(4):
-                                page -=1000
-                                try:
-                                    index = final_df.index[final_df["page"] == page].item()
-                                    output.add_page(inputpdf.pages[index])
-                                    break
-                                except:
-                                    continue
 
-                        filename = k / (f"{Pdf_File.filename} - {detection}.pdf") # + f"{(' ' + stimme) if not stimme == '' else ''}.pdf")
-                        # Write file to disk
-                        with open(filename, "wb") as outputStream:
-                            output.write(outputStream)
-
-
-                        # for i in range(len(inputpdf.pages)):
-                        #     output = PdfWriter()
-                        #     output.add_page(inputpdf.pages[i])
-                        #     with open("document-page%s.pdf" % i, "wb") as outputStream:
-                        #         output.write(outputStream)
+                        # Check if multiple pages
+                        if pd.isnull(row['Seitenanzahl']):
+                            try:
+                                output.add_page(inputpdf.pages[pagenumber])
+                            except:
+                                continue
+                            # Write file to disk
+                            with open(filename, "wb") as outputStream:
+                                output.write(outputStream)
+                        else:
+                            # More then one page
+                            pageamount = int(final_df.loc[index]["Seitenanzahl"])
+                            for page in range(pageamount):
+                                output.add_page(inputpdf.pages[pagenumber + page])
+                            
+                            # Write file to disk
+                            with open(filename, "wb") as outputStream:
+                                output.write(outputStream)
                 else:
                     continue
 

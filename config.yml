@@ -1,3 +1,43 @@
-tesseract_path: "C:\\Program Files\\Tesseract-OCR\\tesseract.exe"
-
+# Ordner Optionen
 folder_options: ["Rot", "Schwarz", "Marsch", "Fliegend"]
+
+instruments: [
+  #01
+  "Floete",
+  #02
+  "Oboe",
+  #03
+  "Klarinette",
+  #04
+  "Fagott",
+  #05
+  "Alt-Sax",
+  #06
+  "Tenor-Sax",
+  #07
+  "Bari-Sax",
+  #08
+  "Fluegelhorn",
+  #09
+  "Horn",
+  #10
+  "Trompete",
+  #11
+  "Posaune in c",
+  #12
+  "Posaune in b",
+  #13
+  "Tenorhorn-Bariton",
+  #14
+  "Bass in c",
+  #15
+  "Bass andere",
+  #17
+  "E-Bass",
+  #20
+  "Gesang",
+  #21
+  "Schlagwerk",
+  #19
+  "Rest"
+]
