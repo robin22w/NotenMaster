@@ -19,25 +19,27 @@ instruments: [
   #08
   "Fluegelhorn",
   #09
-  "Horn",
+  "Horn in f",
   #10
-  "Trompete",
+  "Horn in es",
   #11
-  "Posaune in c",
+  "Trompete",
   #12
-  "Posaune in b",
+  "Posaune in c",
   #13
-  "Tenorhorn-Bariton",
+  "Posaune in b",
   #14
-  "Bass in c",
+  "Tenorhorn-Bariton",
   #15
+  "Bass in c",
+  #16
   "Bass andere",
   #17
   "E-Bass",
-  #20
+  #18
   "Gesang",
-  #21
-  "Schlagwerk",
   #19
+  "Schlagwerk",
+  #20
   "Rest"
 ]

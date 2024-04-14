@@ -12,8 +12,12 @@ from save_pdf import save_pdf_files
 
 
 class GUI_NOTENMASTER():
+    """ This class will be executed if the start.bat file starts.
+    It is the main script and processes the pdf- and exel-file.
+    """
     def __init__(self) -> None:
-
+        """ Initiate the GUI
+        """
         # Load config yml-file
         with open(os.path.join(os.getcwd(), "config.yml"), encoding='utf8') as f:
             self.config = yaml.safe_load(f)
@@ -111,33 +115,49 @@ class GUI_NOTENMASTER():
         running = True
         self.Pdf_File.filename = self.entry_file.get()
         self.Pdf_File.folder_option = self.dropdown_var.get()
-        self.update_info()  # Aktualisiere Infofenster nach Ausführung des Programms
 
-        # Get savedir
-        self.Pdf_File.save_path = filedialog.askdirectory()
+        input_correct, error_message = self.check_inputs()
 
-        # Check if empty
-        if self.Pdf_File.save_path == "":
-            pass
+        if input_correct:
+            self.update_info()  # Aktualisiere Infofenster nach Ausführung des Programms
+
+            # Get savedir
+            self.Pdf_File.save_path = filedialog.askdirectory()
+
+            # Check if empty
+            if self.Pdf_File.save_path == "":
+                pass
+            else:
+                xlsx = pd.ExcelFile(self.Pdf_File.excelpath)
+                books = pd.read_excel(xlsx, xlsx.sheet_names[0])
+
+                books = self.preprocess_dataframe(books)
+
+                save_pdf_files(Pdf_File=self.Pdf_File,
+                            instruments_list=self.instruments_list,
+                            folder_options=self.folder_options,
+                            final_df=books)
+                
+                self.root.destroy()
+                sys.exit()
         else:
-            xlsx = pd.ExcelFile(self.Pdf_File.excelpath)
-            books = pd.read_excel(xlsx, xlsx.sheet_names[0])
-
-            books = self.preprocess_dataframe(books)
-
-            save_pdf_files(Pdf_File=self.Pdf_File,
-                        instruments_list=self.instruments_list,
-                        folder_options=self.folder_options,
-                        final_df=books)
-            
-            self.root.destroy()
-            sys.exit()
+            self.output_text.config(state=tk.NORMAL)
+            self.output_text.delete(1.0, tk.END)
+            self.output_text.insert(tk.END, error_message)
+            self.output_text.config(state=tk.DISABLED)
     
     def preprocess_dataframe(self, df):
 
         # Filter only for rows with page entries
         filtered_data = df.loc[~df['Seite'].isna()]
         return filtered_data
+    
+    def check_inputs(self):
+
+        if self.Pdf_File.filepath == "": return (False, "Select Pdf-file!")
+        if self.Pdf_File.excelpath == "": return (False, "Select Excel-file!")
+        if self.Pdf_File.filename == "": return (False, "Choose filename!")
+        return (True, "")
     
 
 if __name__ == "__main__":

@@ -4,7 +4,7 @@ import pandas as pd
 
 @dataclass
 class PDF_File():
-    filename: str = "Dummy"
+    filename: str = ""
     filepath: str = ""
     excelpath: str = ""
     num_pages: int = 10
