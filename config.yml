@@ -7,9 +7,9 @@ instruments: [
   #02
   "Oboe",
   #03
-  "Klarinette",
+  "Fagott", 
   #04
-  "Fagott",
+  "Klarinette",
   #05
   "Alt-Sax",
   #06
@@ -21,25 +21,25 @@ instruments: [
   #09
   "Horn in f",
   #10
-  "Horn in es",
-  #11
   "Trompete",
-  #12
+  #11
   "Posaune in c",
-  #13
+  #12
   "Posaune in b",
-  #14
+  #13
   "Tenorhorn-Bariton",
-  #15
+  #14
   "Bass in c",
-  #16
+  #15
   "Bass andere",
-  #17
+  #16
   "E-Bass",
+  #17
+  "Schlagwerk",
   #18
   "Gesang",
   #19
-  "Schlagwerk",
+  "Rest",
   #20
-  "Rest"
+  "Horn in es"
 ]

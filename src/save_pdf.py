@@ -26,7 +26,7 @@ def save_pdf_files(Pdf_File, instruments_list, folder_options, final_df):
             s.mkdir(parents=True, exist_ok=True)  # make dir
 
             # Check folder selection and create folder for song name
-            if Pdf_File.folder_option in str(s):
+            if Pdf_File.folder_option in str(s).split("\\")[-1]:
 
                 # Check if matching instrument in final_df
                 if instrument in list(final_df["Ordner"].values):
