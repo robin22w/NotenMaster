@@ -39,7 +39,7 @@ def save_pdf_files(Pdf_File, instruments_list, folder_options, final_df):
                     for index, row in final_df.loc[final_df["Ordner"] == instrument].iterrows():
 
                         # Create filename
-                        filename = k / (f"{Pdf_File.filename} - {row['Instrument']}" + f"{('.pdf') if pd.isnull(row['Notierung']) else ' - ' + row['Notierung']}.pdf")
+                        filename = k / (f"{Pdf_File.filename} - {row['Instrument']}" + f"{('') if pd.isnull(row['Notierung']) else ' - ' + row['Notierung']}.pdf")
 
                         # Get page
                         pagenumber = int(final_df.loc[index]["Seite"]) -1
