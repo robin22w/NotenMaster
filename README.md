@@ -12,9 +12,10 @@ The Orchestral Sheet Music Splitter is a program designed to assist orchestras i
 
 ## How it works
 1. **Input Files:** The user selects the large PDF containing all the sheet music parts and an Excel file that lists each instrument and voice with their corresponding page numbers.
-2. **Run the Program:** Upon clicking the "Run" button, the user is prompted to select a destination folder for the output.
-3. **File Generation:** The program processes the PDF and Excel files, creating a main folder named after the song title. Inside this folder, it creates subfolders for each instrument, splitting the PDF into individual parts and saving them in their respective subfolders.
-4. **Print PDF:** Optionally, the program can generate a single PDF file for printing, with the number of copies specified in the Excel file.
+2. **Config File:** In the `config.yml` the list of the different instruments is defined. This list is the basis for the subdirectory generation. Also the folder options can be modified. The purpose of the folders is to separate the songs even more into further subdirs within the instrument folder.
+3. **Run the Program:** Upon clicking the "Run" button, the user is prompted to select a destination folder for the output.
+4. **File Generation:** The program processes the PDF and Excel files, creating a main folder named after the song title. Inside this folder, it creates subfolders for each instrument, splitting the PDF into individual parts and saving them in their respective subfolders.
+5. **Print PDF:** Optionally, the program can generate a single PDF file for printing, with the number of copies specified in the Excel file.
 
 ## Usage
 1. **Prepare Excel File:** Use the provided template to list each instrument and voice along with their corresponding page numbers in the PDF.
@@ -30,6 +31,8 @@ The Orchestral Sheet Music Splitter is a program designed to assist orchestras i
 ```python
 Song_Title/
 ├── Violin/
+│   ├── folder1  # possible addtional subdirs e.g. music genres
+│       ├── ...
 │   ├── page1.pdf
 │   ├── page2.pdf
 │   └── ...

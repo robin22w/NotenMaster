@@ -1,11 +1,11 @@
-import os
 import pandas as pd
 from pathlib import Path
 from PyPDF2 import PdfWriter, PdfReader
 
 
 def create_print_pdf(Pdf_File, final_df):
-
+    """ Create a single print-pdf-file and write it into save directory
+    """
     # Load pdf
     inputpdf = PdfReader(open(Pdf_File.filepath, "rb"))
     output = PdfWriter()
@@ -13,7 +13,7 @@ def create_print_pdf(Pdf_File, final_df):
     # Filename
     filename = Path(Pdf_File.save_path) / (f"{Pdf_File.filename}_print.pdf")
     
-    # Iterate over Stimmen
+    # Iterate over rows
     for index, row in final_df.iterrows():
 
         # Get page

@@ -87,6 +87,8 @@ class GUI_NOTENMASTER():
         running = False
 
     def select_file(self):
+        """ Get pdf-file trough GUI
+        """
         filepath = filedialog.askopenfilename(filetypes=[("PDF files", "*.pdf")])
         self.Pdf_File.filepath = filepath
         if filepath:
@@ -96,6 +98,8 @@ class GUI_NOTENMASTER():
             self.entry_file.insert(0, self.filename)
 
     def select_excel(self):
+        """ Get excel-file trough GUI
+        """
         excelpath = filedialog.askopenfilename(filetypes=[("Excel files", "*.xlsx")])
         self.Pdf_File.excelpath = excelpath
         if excelpath:
@@ -107,6 +111,8 @@ class GUI_NOTENMASTER():
             self.entry_file_excel.config(state="disabled")
 
     def update_info(self):
+        """ Prints file informations in the info window
+        """
         self.filename = self.entry_file.get()
         dropdown_selection = self.dropdown_var.get()
         info_text = f"Datei: {self.filename} | {dropdown_selection}"
@@ -116,6 +122,8 @@ class GUI_NOTENMASTER():
         self.output_text.config(state=tk.DISABLED)
 
     def run_program(self):
+        """ Executes the program after clicking the "run-button"
+        """
         global running
         running = True
         self.Pdf_File.filename = self.entry_file.get()
@@ -146,15 +154,17 @@ class GUI_NOTENMASTER():
                 self.root.destroy()
                 sys.exit()
         else:
+            # Print error massages in info window
             self.output_text.config(state=tk.NORMAL)
             self.output_text.delete(1.0, tk.END)
             self.output_text.insert(tk.END, error_message)
             self.output_text.config(state=tk.DISABLED)
     
     def create_print_file(self):
+        """ Creates a single pdf-print-file after clicking the "print-button"
+        """
+        # Get user input parameter
         self.Pdf_File.filename = self.entry_file.get()
-        #self.Pdf_File.folder_option = self.dropdown_var.get()
-
         input_correct, error_message = self.check_inputs()
 
         if input_correct:
@@ -176,6 +186,7 @@ class GUI_NOTENMASTER():
                 self.root.destroy()
                 sys.exit()
         else:
+            # Print error massages in info window
             self.output_text.config(state=tk.NORMAL)
             self.output_text.delete(1.0, tk.END)
             self.output_text.insert(tk.END, error_message)
@@ -192,7 +203,6 @@ class GUI_NOTENMASTER():
         return filtered_data
     
     def check_inputs(self):
-
         if self.Pdf_File.filepath == "": return (False, "Select Pdf-file!")
         if self.Pdf_File.excelpath == "": return (False, "Select Excel-file!")
         if self.Pdf_File.filename == "": return (False, "Choose filename!")
