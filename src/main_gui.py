@@ -9,6 +9,7 @@ import yaml
 
 from dataclass import PDF_File
 from save_pdf import save_pdf_files
+from create_print_pdf import create_print_pdf
 
 
 class GUI_NOTENMASTER():
@@ -71,6 +72,10 @@ class GUI_NOTENMASTER():
         button_run = ttk.Button(frame, text="Run", command=self.run_program)
         button_run.grid(row=4, column=0, columnspan=1, padx=5, pady=5, sticky="ew")
 
+        # Button zum Ausführen des Programms
+        button_run = ttk.Button(frame, text="Print", command=self.create_print_file)
+        button_run.grid(row=4, column=2, columnspan=1, padx=5, pady=5, sticky="ew")
+
         # Infofenster
         self.output_text = tk.Text(frame, height=5, width=50, state=tk.DISABLED)
         self.output_text.grid(row=5, column=0, columnspan=3, padx=5, pady=5, sticky="nsew")  # Mitwachsen in alle Richtungen
@@ -131,7 +136,7 @@ class GUI_NOTENMASTER():
                 xlsx = pd.ExcelFile(self.Pdf_File.excelpath)
                 books = pd.read_excel(xlsx, xlsx.sheet_names[0])
 
-                books = self.preprocess_dataframe(books)
+                books = self.preprocess_dataframe_for_split(books)
 
                 save_pdf_files(Pdf_File=self.Pdf_File,
                             instruments_list=self.instruments_list,
@@ -146,10 +151,44 @@ class GUI_NOTENMASTER():
             self.output_text.insert(tk.END, error_message)
             self.output_text.config(state=tk.DISABLED)
     
-    def preprocess_dataframe(self, df):
+    def create_print_file(self):
+        self.Pdf_File.filename = self.entry_file.get()
+        #self.Pdf_File.folder_option = self.dropdown_var.get()
 
+        input_correct, error_message = self.check_inputs()
+
+        if input_correct:
+            # Get savedir
+            self.Pdf_File.save_path = filedialog.askdirectory()
+
+            # Check if empty
+            if self.Pdf_File.save_path == "":
+                pass
+            else:
+                xlsx = pd.ExcelFile(self.Pdf_File.excelpath)
+                books = pd.read_excel(xlsx, xlsx.sheet_names[0])
+                books = self.preprocess_dataframe_for_split(books)
+                books = self.preprocess_dataframe_for_printing(books)
+
+                create_print_pdf(Pdf_File=self.Pdf_File,
+                                 final_df=books)
+                
+                self.root.destroy()
+                sys.exit()
+        else:
+            self.output_text.config(state=tk.NORMAL)
+            self.output_text.delete(1.0, tk.END)
+            self.output_text.insert(tk.END, error_message)
+            self.output_text.config(state=tk.DISABLED)
+    
+    def preprocess_dataframe_for_split(self, df):
         # Filter only for rows with page entries
         filtered_data = df.loc[~df['Seite'].isna()]
+        return filtered_data
+    
+    def preprocess_dataframe_for_printing(self, df):
+        # Filter only for rows with print entries
+        filtered_data = df.loc[~df['Druckanzahl'].isna()]
         return filtered_data
     
     def check_inputs(self):
