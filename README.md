@@ -44,7 +44,7 @@ Song_Title/
 ## Installation
 Clone the Repository
 ```bash
-git clone https://github.com/your-repo/orchestral-sheet-music-splitter.git
+git clone https://github.com/robin22w/NotenMaster.git
 ```
 
 Create conda env with requirements.txt
